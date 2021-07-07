@@ -1,21 +1,29 @@
 {
   "name": "forkify",
   "version": "1.0.0",
-  "description": "recipe app",
-  "main": "index.html",
+  "description": "",
+  "main": "index.js",
   "scripts": {
     "start": "parcel index.html",
     "build": "parcel build index.html"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/axseinga/forkify.git"
+  },
   "author": "Agnieszka Urbanowicz",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/axseinga/forkify/issues"
+  },
+  "homepage": "https://github.com/axseinga/forkify#readme",
   "devDependencies": {
-    "parcel": "^2.0.0-beta.1",
+    "parcel": "^2.0.0-nightly.447",
     "sass": "^1.35.1"
   },
   "dependencies": {
-    "@parcel/transformer-sass": "^2.0.0-beta.1",
     "core-js": "^3.15.2",
+    "fractional": "^1.0.0",
     "regenerator-runtime": "^0.13.7"
   }
 }
