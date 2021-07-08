@@ -482,11 +482,15 @@ const controlRecipes = async function () {
 
     _recipeView.default.render(model.state.recipe);
   } catch (err) {
-    alert(err);
+    _recipeView.default.renderError();
   }
 };
 
-['hashchange', 'load'].forEach(ev => window.addEventListener(ev, controlRecipes));
+const init = function () {
+  _recipeView.default.addHandlerRender(controlRecipes);
+};
+
+init();
 },{"core-js/modules/web.immediate.js":"BQdWp","./model.js":"5cc2Y","./views/recipeView.js":"5K27E"}],"BQdWp":[function(require,module,exports) {
 var $ = require('../internals/export');
 
@@ -1405,6 +1409,7 @@ const loadRecipe = async function (id) {
   } catch (err) {
     // Temp error handling
     console.error(`${err} ****`);
+    throw err;
   }
 };
 
@@ -2216,8 +2221,6 @@ var _fractional = require("fractional");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 function _classPrivateFieldGet(receiver, privateMap) { var descriptor = _classExtractFieldDescriptor(receiver, privateMap, "get"); return _classApplyDescriptorGet(receiver, descriptor); }
 
 function _classApplyDescriptorGet(receiver, descriptor) { if (descriptor.get) { return descriptor.get.call(receiver); } return descriptor.value; }
@@ -2235,6 +2238,10 @@ console.log(_fractional.Fraction);
 var _parentElement = /*#__PURE__*/new WeakMap();
 
 var _data = /*#__PURE__*/new WeakMap();
+
+var _errorMessage = /*#__PURE__*/new WeakMap();
+
+var _message = /*#__PURE__*/new WeakMap();
 
 var _clear = /*#__PURE__*/new WeakSet();
 
@@ -2260,17 +2267,14 @@ class RecipeView {
       value: void 0
     });
 
-    _defineProperty(this, "renderSpinner", function () {
-      const markup = `
-          <div class="spinner">
-            <svg>
-              <use href="${_icons.default}#icon-loader"></use>
-            </svg>
-          </div>
-          `;
-      _classPrivateFieldGet(this, _parentElement).innerHTML = '';
+    _errorMessage.set(this, {
+      writable: true,
+      value: 'We could not find that recipe. Please try another one!'
+    });
 
-      _classPrivateFieldGet(this, _parentElement).insertAdjacentHTML('afterbegin', markup);
+    _message.set(this, {
+      writable: true,
+      value: ''
     });
   }
 
@@ -2282,6 +2286,58 @@ class RecipeView {
     _classPrivateMethodGet(this, _clear, _clear2).call(this);
 
     _classPrivateFieldGet(this, _parentElement).insertAdjacentHTML('afterbegin', markup);
+  }
+
+  renderSpinner() {
+    const markup = `
+          <div class="spinner">
+            <svg>
+              <use href="${_icons.default}#icon-loader"></use>
+            </svg>
+          </div>
+          `;
+
+    _classPrivateMethodGet(this, _clear, _clear2).call(this);
+
+    _classPrivateFieldGet(this, _parentElement).insertAdjacentHTML('afterbegin', markup);
+  }
+
+  renderError(message = _classPrivateFieldGet(this, _errorMessage)) {
+    const markup = `
+    <div class="error">
+            <div>
+              <svg>
+                <use href="${_icons.default}#icon-alert-triangle"></use>
+              </svg>
+            </div>
+            <p>${message}</p>
+          </div>
+    `;
+
+    _classPrivateMethodGet(this, _clear, _clear2).call(this);
+
+    _classPrivateFieldGet(this, _parentElement).insertAdjacentHTML('afterbegin', markup);
+  }
+
+  renderMessage(message = _classPrivateFieldGet(this, _message)) {
+    const markup = `
+    <div class="message">
+            <div>
+              <svg>
+                <use href="${_icons.default}#icon-smile"></use>
+              </svg>
+            </div>
+            <p>${message}</p>
+          </div>
+    `;
+
+    _classPrivateMethodGet(this, _clear, _clear2).call(this);
+
+    _classPrivateFieldGet(this, _parentElement).insertAdjacentHTML('afterbegin', markup);
+  }
+
+  addHandlerRender(handler) {
+    ['hashchange', 'load'].forEach(ev => window.addEventListener(ev, handler));
   }
 
 }
