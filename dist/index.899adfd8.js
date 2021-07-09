@@ -465,6 +465,8 @@ var _searchView = _interopRequireDefault(require("./views/searchView.js"));
 
 var _resultsView = _interopRequireDefault(require("./views/resultsView.js"));
 
+var _paginationView = _interopRequireDefault(require("./views/paginationView.js"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
@@ -501,25 +503,37 @@ const controlSearchResults = async function () {
 
     const query = _searchView.default.getQuery();
 
-    console.log(query);
     if (!query) return; // 2) Load search results
 
     await model.loadSearchResults(query); // 3) render results
 
-    _resultsView.default.render(model.state.search.results);
+    _resultsView.default.render(model.getSearchResultsPage()); // 4) Render initial pagination buttons
+
+
+    _paginationView.default.render(model.state.search);
   } catch (err) {
     console.log(err);
   }
+};
+
+const controlPagination = function (goToPage) {
+  // 1) render new results
+  _resultsView.default.render(model.getSearchResultsPage(goToPage)); // 1) Render new pagination buttons
+
+
+  _paginationView.default.render(model.state.search);
 };
 
 const init = function () {
   _recipeView.default.addHandlerRender(controlRecipes);
 
   _searchView.default.addHandlerSearch(controlSearchResults);
+
+  _paginationView.default.addHandlerClick(controlPagination);
 };
 
 init();
-},{"core-js/modules/web.immediate.js":"BQdWp","./model.js":"5cc2Y","./views/recipeView.js":"5K27E","./views/searchView.js":"61k0n","./views/resultsView.js":"794dY"}],"BQdWp":[function(require,module,exports) {
+},{"core-js/modules/web.immediate.js":"BQdWp","./model.js":"5cc2Y","./views/recipeView.js":"5K27E","./views/searchView.js":"61k0n","./views/resultsView.js":"794dY","./views/paginationView.js":"6ojf6"}],"BQdWp":[function(require,module,exports) {
 var $ = require('../internals/export');
 
 var global = require('../internals/global');
@@ -1403,7 +1417,7 @@ module.exports = classof(global.process) == 'process';
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.loadSearchResults = exports.loadRecipe = exports.state = void 0;
+exports.getSearchResultsPage = exports.loadSearchResults = exports.loadRecipe = exports.state = void 0;
 
 var _regeneratorRuntime = require("regenerator-runtime");
 
@@ -1415,7 +1429,9 @@ const state = {
   recipe: {},
   search: {
     query: '',
-    results: []
+    results: [],
+    page: 1,
+    resultsPerPage: _config.RES_PER_PAGE
   }
 }; // function that change recipe object
 
@@ -1467,6 +1483,17 @@ const loadSearchResults = async function (query) {
 };
 
 exports.loadSearchResults = loadSearchResults;
+
+const getSearchResultsPage = function (page = state.search.page) {
+  state.search.page = page;
+  const start = (page - 1) * state.search.resultsPerPage; // 0;
+
+  const end = page * state.search.resultsPerPage; // 9;
+
+  return state.search.results.slice(start, end);
+};
+
+exports.getSearchResultsPage = getSearchResultsPage;
 },{"regenerator-runtime":"6Rcwf","./config.js":"he5L7","./helpers.js":"rsHc2"}],"6Rcwf":[function(require,module,exports) {
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
@@ -2223,11 +2250,13 @@ try {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.TIMEOUT_SEC = exports.API_URL = void 0;
+exports.RES_PER_PAGE = exports.TIMEOUT_SEC = exports.API_URL = void 0;
 const API_URL = 'https://forkify-api.herokuapp.com/api/v2/recipes';
 exports.API_URL = API_URL;
 const TIMEOUT_SEC = 10;
 exports.TIMEOUT_SEC = TIMEOUT_SEC;
+const RES_PER_PAGE = 10;
+exports.RES_PER_PAGE = RES_PER_PAGE;
 },{}],"rsHc2":[function(require,module,exports) {
 "use strict";
 
@@ -3039,6 +3068,86 @@ class ResultsView extends _View.default {
 }
 
 var _default = new ResultsView();
+
+exports.default = _default;
+},{"./View.js":"2YoaS","url:../../img/icons.svg":"7wuzf"}],"6ojf6":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _View = _interopRequireDefault(require("./View.js"));
+
+var _icons = _interopRequireDefault(require("url:../../img/icons.svg"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+class PaginationView extends _View.default {
+  constructor(...args) {
+    super(...args);
+
+    _defineProperty(this, "_parentElement", document.querySelector('.pagination'));
+  }
+
+  addHandlerClick(handler) {
+    this._parentElement.addEventListener('click', function (e) {
+      const btn = e.target.closest('.btn--inline');
+      if (!btn) return;
+      const goToPage = +btn.dataset.goto;
+      handler(goToPage);
+    });
+  }
+
+  _generateBtnMarkup(page, direction, arrow) {
+    return `
+    <button data-goto="${page}" class="btn--inline pagination__btn--${direction}">
+      <span>${page}</span>
+      <svg class="search__icon">
+        <use href="${_icons.default}#icon-arrow-${arrow}"></use>
+      </svg>
+    </button>
+`;
+  }
+
+  _generateMarkup() {
+    const curPage = this._data.page;
+    const numPages = Math.ceil(this._data.results.length / this._data.resultsPerPage);
+    const next = 'next';
+    const prev = 'prev';
+    const left = 'left';
+    const right = 'right';
+    const nextPage = curPage + 1;
+    const prevPage = curPage - 1; // Page 1, and there are other pages
+
+    if (curPage === 1 && numPages > 1) {
+      return this._generateBtnMarkup(nextPage, next, right);
+    } // Last page
+
+
+    if (curPage === numPages && numPages > 1) {
+      return this._generateBtnMarkup(prevPage, prev, left);
+    } // Other page
+
+
+    if (curPage < numPages) {
+      const prevBtn = this._generateBtnMarkup(prevPage, prev, left);
+
+      const nextBtn = this._generateBtnMarkup(nextPage, next, right);
+
+      return [prevBtn, nextBtn];
+    } // Page 1, and there are no other pages
+
+
+    return '';
+  }
+
+}
+
+var _default = new PaginationView();
 
 exports.default = _default;
 },{"./View.js":"2YoaS","url:../../img/icons.svg":"7wuzf"}]},{},["6GPhY","4iKEs","I5Uh7"], "I5Uh7", "parcelRequirefade")
