@@ -485,7 +485,10 @@ const controlRecipes = async function () {
     const id = window.location.hash.slice(1);
     if (!id) return;
 
-    _recipeView.default.renderSpinner(); // 1) loading recipe
+    _recipeView.default.renderSpinner(); // 0) Update results view to mark selected search result
+
+
+    _resultsView.default.update(model.getSearchResultsPage()); // 1) loading recipe
 
 
     await model.loadRecipe(id); // 2) rendering recipe
@@ -527,8 +530,9 @@ const controlPagination = function (goToPage) {
 const controlServings = function (newServings) {
   // Update the recipe servings (in state)
   model.updateServings(newServings); // Update the recipe view
+  //recipeView.render(model.state.recipe);
 
-  _recipeView.default.render(model.state.recipe);
+  _recipeView.default.update(model.state.recipe);
 };
 
 const init = function () {
@@ -2475,6 +2479,30 @@ class View {
     this._parentElement.insertAdjacentHTML('afterbegin', markup);
   }
 
+  update(data) {
+    this._data = data;
+
+    const newMarkup = this._generateMarkup();
+
+    const newDOM = document.createRange().createContextualFragment(newMarkup);
+    const newElements = Array.from(newDOM.querySelectorAll('*'));
+    const curElements = Array.from(this._parentElement.querySelectorAll('*'));
+    newElements.forEach((newEl, i) => {
+      var _newEl$firstChild;
+
+      const curEl = curElements[i]; // Updates changed text
+
+      if (!newEl.isEqualNode(curEl) && ((_newEl$firstChild = newEl.firstChild) === null || _newEl$firstChild === void 0 ? void 0 : _newEl$firstChild.nodeValue.trim()) !== '') {
+        curEl.textContent = newEl.textContent;
+      } // Updates changed attributes
+
+
+      if (!newEl.isEqualNode(curEl)) {
+        Array.from(newEl.attributes).forEach(attr => curEl.setAttribute(attr.name, attr.value));
+      }
+    });
+  }
+
   _clear() {
     this._parentElement.innerHTML = '';
   }
@@ -3083,9 +3111,10 @@ class ResultsView extends _View.default {
   }
 
   _generateMarkupPreview(result) {
+    const id = window.location.hash.slice(1);
     return `
     <li class="preview">
-        <a class="preview__link" href="#${result.id}">
+        <a class="preview__link ${result.id === id ? 'preview__link--active' : ''}" href="#${result.id}">
         <figure class="preview__fig">
         <img src="${result.image}" alt="Test" />
       </figure>
